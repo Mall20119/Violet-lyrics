@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#10091c" />
+  <title>Camelia — Music & Lyrics</title>
+  <style>
+    :root {
+      --bg: #10091c;
+      --panel: rgba(34, 20, 53, .88);
+      --panel2: #211333;
+      --purple: #b56cff;
+      --purple-bright: #d7a7ff;
+      --muted: #b7a9c8;
+      --white: #fbf7ff;
+      --line: rgba(255,255,255,.11);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; color: var(--white);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(ellipse at 15% 5%, rgba(137, 57, 210, .30), transparent 40%),
+        radial-gradient(ellipse at 90% 85%, rgba(80, 31, 145, .26), transparent 38%),
+        var(--bg);
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .app { width: min(1080px, 100%); margin: 0 auto; padding: 28px 20px 132px; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:26px; }
+    .brand { display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px; }
+    .brand-icon { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; background:linear-gradient(135deg,#d4a2ff,#7a35d6); color:#1a0c29; box-shadow:0 0 26px #9d4de655; font-size:21px; }
+    .tag { color:var(--muted); font-size:12px; border:1px solid var(--line); padding:8px 11px; border-radius:999px; }
+    .layout { display:grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap:22px; align-items:stretch; }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:24px; box-shadow:0 22px 70px rgba(0,0,0,.18); backdrop-filter:blur(14px); }
+    .player-card { padding:24px; }
+    .eyebrow { color:var(--purple-bright); text-transform:uppercase; font-size:11px; font-weight:800; letter-spacing:2px; }
+    .cover {
+      position:relative; overflow:hidden; aspect-ratio:1 / 1; width:min(100%, 360px); margin:20px auto 24px;
+      border-radius:22px; display:grid; place-items:center;
+      background:radial-gradient(circle at 50% 38%, #d7a4ff 0, #8b45d0 22%, #48206e 52%, #21102f 78%);
+      box-shadow:0 18px 50px #8c3de533;
+    }
+    .cover::before,.cover::after { content:""; position:absolute; border:1px solid #ffffff3b; border-radius:50%; width:72%; aspect-ratio:1; }
+    .cover::after { width:52%; }
+    .cover-glow { position:absolute; width:44%; aspect-ratio:1; border-radius:50%; background:#f1d8ff66; filter:blur(30px); }
+    .cover-note { position:relative; z-index:1; font-size:clamp(62px, 10vw, 110px); text-shadow:0 8px 40px #220b3b99; }
+    .cover-label { position:absolute; bottom:18px; left:18px; right:18px; z-index:2; text-align:center; font-size:11px; text-transform:uppercase; letter-spacing:3px; color:#f5e7ff; }
+    h1 { margin:0; font-size:clamp(28px,4vw,38px); letter-spacing:-1px; }
+    .artist { color:var(--muted); margin:7px 0 22px; }
+    .track-meta { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:9px; font-size:12px; color:var(--muted); }
+    .progress { width:100%; accent-color:var(--purple-bright); cursor:pointer; }
+    .controls { display:flex; justify-content:center; align-items:center; gap:22px; margin:18px 0 14px; }
+    .control { border:0; color:#eee2ff; background:transparent; font-size:21px; padding:8px; }
+    .play { width:58px; height:58px; border:0; border-radius:50%; color:#210d31; font-size:22px; font-weight:900; background:linear-gradient(135deg,#e2c0ff,#a95cff); box-shadow:0 0 26px #b56cff44; }
+    .small-note { font-size:12px; line-height:1.55; color:var(--muted); }
+    .upload { display:flex; flex-wrap:wrap; gap:9px; margin-top:16px; }
+    .upload label,.secondary { display:inline-flex; align-items:center; justify-content:center; gap:7px; border:1px solid #c18aff55; color:#eedcff; background:#8b45d01c; border-radius:12px; padding:10px 12px; font-size:12px; }
+    .upload input { display:none; }
+    .lyrics-card { padding:24px; min-height:600px; display:flex; flex-direction:column; }
+    .lyrics-head { display:flex; justify-content:space-between; align-items:center; gap:12px; padding-bottom:18px; border-bottom:1px solid var(--line); }
+    .lyrics-head h2 { font-size:19px; margin:0; }
+    .live { display:flex; align-items:center; gap:7px; color:#d9b7ff; font-size:11px; }
+    .dot { width:7px; height:7px; border-radius:50%; background:#c58aff; box-shadow:0 0 12px #c58aff; }
+    .lyrics-window { flex:1; min-height:390px; overflow:auto; padding:55px 4px; text-align:center; scroll-behavior:smooth; }
+    .lyric-line { color:#a99bb8; font-weight:700; font-size:clamp(17px,2.4vw,24px); line-height:1.5; margin:22px 0; transition:all .35s ease; }
+    .lyric-line.active { color:#fff; font-size:clamp(21px,2.8vw,29px); text-shadow:0 0 24px #c17dff80; transform:scale(1.02); }
+    .lyric-line.past { color:#d0bfdc; }
+    .empty { max-width:350px; margin:0 auto; color:var(--muted); line-height:1.8; }
+    .empty .big { font-size:44px; margin-bottom:14px; }
+    .lyrics-tools { border-top:1px solid var(--line); padding-top:15px; }
+    .lyrics-tools summary { color:#d9b7ff; cursor:pointer; font-size:13px; font-weight:700; }
+    .lyrics-tools p { color:var(--muted); font-size:12px; line-height:1.6; }
+    textarea { width:100%; min-height:145px; resize:vertical; color:#f8efff; background:#10091c; border:1px solid var(--line); border-radius:12px; padding:12px; outline:none; }
+    textarea:focus { border-color:#b56cff; }
+    .tool-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .primary,.secondary { border-radius:10px; padding:10px 13px; font-weight:700; font-size:12px; }
+    .primary { color:#210d31; border:0; background:linear-gradient(135deg,#e2c0ff,#a95cff); }
+    .bottom-player { position:fixed; bottom:0; left:0; right:0; z-index:10; padding:12px 20px calc(12px + env(safe-area-inset-bottom)); background:#130b20eF; border-top:1px solid var(--line); backdrop-filter:blur(18px); }
+    .bottom-inner { max-width:1080px; margin:auto; display:flex; align-items:center; gap:14px; }
+    .mini-cover { width:43px; height:43px; flex:0 0 auto; display:grid; place-items:center; border-radius:10px; background:linear-gradient(135deg,#d4a2ff,#53227d); color:#210d31; font-size:22px; }
+    .mini-info { min-width:0; flex:1; }
+    .mini-title { font-weight:750; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .mini-artist { color:var(--muted); font-size:11px; margin-top:3px; }
+    .bottom-play { width:42px; height:42px; border-radius:50%; border:0; background:#d8b0ff; color:#210d31; font-weight:900; }
+    .bottom-progress { position:absolute; top:-2px; left:0; width:100%; height:3px; accent-color:#c58aff; }
+    footer { text-align:center; color:#8f7ea2; font-size:11px; margin-top:26px; }
+    @media (max-width:760px) {
+      .app { padding:20px 14px 122px; }
+      .layout { grid-template-columns:1fr; }
+      .player-card { padding:19px; }
+      .cover { width:min(78%,300px); margin:16px auto 20px; }
+      .lyrics-card { min-height:490px; padding:19px; }
+      .lyrics-window { min-height:300px; padding:35px 4px; }
+      .tag { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand-icon">♫</span><span>Violet Lyrics</span></div>
+      <div class="tag">MUSIC · LYRICS · YOUR MOMENT</div>
+    </header>
+
+    <section class="layout">
+      <article class="card player-card">
+        <div class="eyebrow">Now playing</div>
+        <div class="cover" aria-label="Ilustrasi cover ungu">
+          <div class="cover-glow"></div><div class="cover-note">♫</div>
+          <div class="cover-label">A song for the soul</div>
+        </div>
+        <h1 id="songTitle">Camelia</h1>
+        <p class="artist" id="artistName">Irwansyah</p>
+        <div class="track-meta"><span id="currentTime">0:00</span><span id="duration">0:00</span></div>
+        <input id="progress" class="progress" type="range" min="0" max="100" value="0" aria-label="Posisi lagu" />
+        <div class="controls">
+          <button class="control" id="restart" aria-label="Mulai dari awal" title="Mulai dari awal">↺</button>
+          <button class="play" id="play" aria-label="Putar musik" title="Putar musik">▶</button>
+          <button class="control" id="mute" aria-label="Bisukan suara" title="Bisukan suara">♫</button>
+        </div>
+        <p class="small-note">Pilih file audio dari perangkatmu untuk memutar lagu. File audio tidak diunggah ke GitHub dan hanya diputar di browser kamu.</p>
+        <div class="upload">
+          <label for="audioFile">＋ Pilih file audio</label>
+          <input id="audioFile" type="file" accept="audio/*" />
+          <label for="coverFile">▧ Ganti cover</label>
+          <input id="coverFile" type="file" accept="image/*" />
+        </div>
+        <audio id="audio" preload="metadata"></audio>
+      </article>
+
+      <article class="card lyrics-card">
+        <div class="lyrics-head">
+          <h2>Lirik lagu</h2>
+          <span class="live"><span class="dot"></span> SYNC PLAYER</span>
+        </div>
+        <div id="lyricsWindow" class="lyrics-window" aria-live="polite">
+          <div class="empty">
+            <div class="big">♫</div>
+            <strong>Lirik akan tampil di sini</strong>
+            <p>Tambahkan lirik milikmu di bagian “Edit lirik & sinkronisasi”. Gunakan format timestamp agar setiap baris muncul sesuai waktu lagu.</p>
+          </div>
+        </div>
+        <div class="lyrics-tools">
+          <details>
+            <summary>Edit lirik & sinkronisasi</summary>
+            <p>Format satu baris: <code>[menit:detik] teks lirik</code>. Contoh format: <code>[00:12.50] Baris lirik milikmu</code>. Gunakan lirik yang kamu tulis sendiri atau berhak gunakan.</p>
+            <textarea id="lyricsInput" spellcheck="false" placeholder="[00:05.00] Tulis baris lirik di sini&#10;[00:10.50] Tambahkan baris berikutnya&#10;[00:15.00] Atur timestamp sesuai audio"></textarea>
+            <div class="tool-actions">
+              <button class="primary" id="loadLyrics">Tampilkan lirik</button>
+              <button class="secondary" id="sampleLyrics">Muat contoh demo</button>
+              <button class="secondary" id="clearLyrics">Hapus</button>
+            </div>
+            <p>Contoh demo hanya teks buatan sendiri, bukan lirik lagu “Camelia”. Timestamp perlu kamu sesuaikan agar sinkron tepat.</p>
+          </details>
+        </div>
+      </article>
+    </section>
+    <footer>Violet Lyrics · Fan-made player template · Audio dan lirik disediakan pengguna</footer>
+  </main>
+
+  <div class="bottom-player">
+    <input id="bottomProgress" class="bottom-progress" type="range" min="0" max="100" value="0" aria-label="Posisi lagu mini player" />
+    <div class="bottom-inner">
+      <div class="mini-cover">♫</div>
+      <div class="mini-info"><div class="mini-title" id="miniTitle">Camelia</div><div class="mini-artist" id="miniArtist">Irwansyah</div></div>
+      <button class="bottom-play" id="bottomPlay" aria-label="Putar atau jeda">▶</button>
+    </div>
+  </div>
+
+  <script>
+    const audio = document.getElementById('audio');
+    const playBtn = document.getElementById('play');
+    const bottomPlay = document.getElementById('bottomPlay');
+    const progress = document.getElementById('progress');
+    const bottomProgress = document.getElementById('bottomProgress');
+    const currentTimeEl = document.getElementById('currentTime');
+    const durationEl = document.getElementById('duration');
+    const lyricsWindow = document.getElementById('lyricsWindow');
+    const lyricsInput = document.getElementById('lyricsInput');
+    let lyrics = [];
+    let activeIndex = -1;
+    let objectAudioUrl = null;
+    let objectCoverUrl = null;
+
+    function fmt(seconds) {
+      if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function setPlayIcon() {
+      const icon = audio.paused ? '▶' : 'Ⅱ';
+      playBtn.textContent = icon;
+      bottomPlay.textContent = icon;
+      playBtn.setAttribute('aria-label', audio.paused ? 'Putar musik' : 'Jeda musik');
+    }
+
+    async function togglePlay() {
+      if (!audio.src) {
+        alert('Pilih file audio terlebih dahulu dengan tombol “Pilih file audio”.');
+        return;
+      }
+      if (audio.paused) {
+        try { await audio.play(); } catch (e) { alert('Audio tidak bisa diputar. Coba pilih file audio lain.'); }
+      } else {
+        audio.pause();
+      }
+      setPlayIcon();
+    }
+
+    playBtn.addEventListener('click', togglePlay);
+    bottomPlay.addEventListener('click', togglePlay);
+    audio.addEventListener('play', setPlayIcon);
+    audio.addEventListener('pause', setPlayIcon);
+    audio.addEventListener('ended', setPlayIcon);
+
+    document.getElementById('restart').addEventListener('click', () => {
+      audio.currentTime = 0;
+      if (audio.src) audio.play().catch(() => {});
+    });
+    document.getElementById('mute').addEventListener('click', () => {
+      audio.muted = !audio.muted;
+      document.getElementById('mute').textContent = audio.muted ? '🔇' : '♫';
+    });
+
+    document.getElementById('audioFile').addEventListener('change', (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      if (objectAudioUrl) URL.revokeObjectURL(objectAudioUrl);
+      objectAudioUrl = URL.createObjectURL(file);
+      audio.src = objectAudioUrl;
+      audio.load();
+      audio.play().then(setPlayIcon).catch(setPlayIcon);
+    });
+
+    document.getElementById('coverFile').addEventListener('change', (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      if (objectCoverUrl) URL.revokeObjectURL(objectCoverUrl);
+      objectCoverUrl = URL.createObjectURL(file);
+      document.querySelector('.cover').style.background = `center / cover no-repeat url("${objectCoverUrl}")`;
+      document.querySelector('.cover-glow').style.display = 'none';
+      document.querySelector('.cover-note').style.display = 'none';
+      document.querySelector('.cover-label').textContent = 'Custom cover';
+    });
+
+    function seek(value) {
+      if (Number.isFinite(audio.duration) && audio.duration > 0) {
+        audio.currentTime = (Number(value) / 100) * audio.duration;
+      }
+    }
+    progress.addEventListener('input', e => { seek(e.target.value); bottomProgress.value = e.target.value; });
+    bottomProgress.addEventListener('input', e => { seek(e.target.value); progress.value = e.target.value; });
+
+    audio.addEventListener('loadedmetadata', () => {
+      durationEl.textContent = fmt(audio.duration);
+    });
+    audio.addEventListener('timeupdate', () => {
+      currentTimeEl.textContent = fmt(audio.currentTime);
+      const pct = Number.isFinite(audio.duration) && audio.duration > 0 ? (audio.currentTime / audio.duration) * 100 : 0;
+      progress.value = pct;
+      bottomProgress.value = pct;
+      syncLyrics();
+    });
+
+    function parseLyrics(raw) {
+      const parsed = [];
+      const re = /^\[(\d{1,2}):(\d{2}(?:\.\d{1,3})?)\]\s*(.+)$/;
+      raw.split(/\r?\n/).forEach(line => {
+        const match = line.trim().match(re);
+        if (match) {
+          const time = Number(match[1]) * 60 + Number(match[2]);
+          parsed.push({ time, text: match[3].trim() });
+        }
+      });
+      return parsed.sort((a, b) => a.time - b.time);
+    }
+
+    function renderLyrics() {
+      activeIndex = -1;
+      if (!lyrics.length) {
+        lyricsWindow.innerHTML = '<div class="empty"><div class="big">♫</div><strong>Belum ada lirik</strong><p>Masukkan lirik bertimestamp di menu edit lirik.</p></div>';
+        return;
+      }
+      lyricsWindow.innerHTML = '';
+      lyrics.forEach((line, index) => {
+        const p = document.createElement('p');
+        p.className = 'lyric-line';
+        p.textContent = line.text;
+        p.dataset.index = index;
+        lyricsWindow.appendChild(p);
+      });
+      syncLyrics();
+    }
+
+    function syncLyrics() {
+      if (!lyrics.length) return;
+      let index = -1;
+      for (let i = 0; i < lyrics.length; i++) {
+        if (lyrics[i].time <= audio.currentTime) index = i;
+        else break;
+      }
+      if (index === activeIndex) return;
+      activeIndex = index;
+      const lines = lyricsWindow.querySelectorAll('.lyric-line');
+      lines.forEach((line, i) => {
+        line.classList.toggle('active', i === activeIndex);
+        line.classList.toggle('past', i < activeIndex);
+      });
+      const active = lyricsWindow.querySelector('.lyric-line.active');
+      if (active) active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    document.getElementById('loadLyrics').addEventListener('click', () => {
+      lyrics = parseLyrics(lyricsInput.value);
+      if (!lyrics.length) {
+        alert('Belum ada baris yang terbaca. Gunakan format seperti [00:12.50] teks lirik.');
+        return;
+      }
+      renderLyrics();
+    });
+
+    document.getElementById('sampleLyrics').addEventListener('click', () => {
+      lyricsInput.value = '[00:00.00] Di bawah langit malam\n[00:05.00] Ada cerita yang kusimpan\n[00:10.00] Nada perlahan menemani\n[00:15.00] Sampai pagi datang kembali';
+      lyrics = parseLyrics(lyricsInput.value);
+      renderLyrics();
+    });
+
+    document.getElementById('clearLyrics').addEventListener('click', () => {
+      lyricsInput.value = '';
+      lyrics = [];
+      renderLyrics();
+    });
+  </script>
+</body>
+</html>
